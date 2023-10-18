@@ -76,22 +76,10 @@ public abstract class SwerveDrivetrain extends Subsystem {
 
   private void initializeAllModules() {
     try {
-      backLeftSwerveModule = SwerveModuleFactory.createHybridMk1Mode(ModuleNames.BACK_LEFT,
-          0.7666666666666667, false, false,
-          5, 4, 
-          2);
-
-      frontRightSwerveModule = SwerveModuleFactory.createHybridMk1Mode(ModuleNames.FRONT_RIGHT,
-          0.8291666666666667, false, false,
-          8, 1, 1);
-
-      frontLeftSwerveModule = SwerveModuleFactory.createHybridMk1Mode(ModuleNames.FRONT_LEFT,
-          0.1611111111111111, false, false,
-          7, 3, 0);
-
-      backRightSwerveModule = SwerveModuleFactory.createHybridMk1Mode(ModuleNames.BACK_RIGHT,
-          0.8611111111111111, false, false,
-          9, 6, 3);
+      //backLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
+      //frontRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
+      //frontLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
+      //backRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
 
       driveKinematics = new SwerveDriveKinematics(OFFSET_ARRAY);
       driveOdometry = new SwerveDriveOdometry(driveKinematics,
@@ -230,7 +218,7 @@ public abstract class SwerveDrivetrain extends Subsystem {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    driveOdometry.update(getPigeonRotation2d(), getModulePositionsNoKey());
+    //driveOdometry.update(getPigeonRotation2d(), getModulePositionsNoKey());
 
     for (SwerveModuleBase module : getModules()) {
       // try and update each module's state unless it cannot be found, then return an

@@ -1,5 +1,7 @@
 package frc.robot.Subsystems.SwerveModule;
 
+import edu.wpi.first.math.Pair;
+
 public interface ModuleConfiguration {
 
     //any swerve version should extend off of SwerveModuleBase which
@@ -10,7 +12,7 @@ public interface ModuleConfiguration {
     double getModuleVelocity();
     double getDistanceTravelled();
     void configureSettings();
-    void initalize(boolean isReversedDrive, boolean isReversedTurn, int driveId, int turnId, int analogId);
+    void initalize(boolean isReversedDrive, boolean isReversedTurn, int driveId, int turnId, int analogId, 
+                            Pair<Integer,Integer> driveEncId);
     void easyMotion(double drive, double turn);
-    
 }
