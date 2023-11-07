@@ -3,6 +3,9 @@ package frc.robot.Subsystems.SwerveModule;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.CANSparkMax.ControlType;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -12,6 +15,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.SwerveConstants.ModuleNames;
 import frc.robot.Subsystems.Drivetrains.SwerveDrivetrain;
 import frc.robot.Subsystems.Networking.NetworkEntry;
@@ -38,7 +42,7 @@ public abstract class SwerveModuleBase implements ModuleConfiguration {
         initialVelo = () -> getModuleVelocity();
         initialAngle = () -> getModuleAngle();
 
-        updateDrivePIDs(drivePID, angularPID);
+        updateDrivePIDs(DRIVE_PID_CONTROLLER, MODULE_HEADING_PID_CONTROLLER);
 
         SwerveDrivetrain.moduleWheelPos.put(moduleName, getWheelPosition());
 
@@ -81,7 +85,7 @@ public abstract class SwerveModuleBase implements ModuleConfiguration {
     }
 
     protected double getModuleAngle() {
-        double unceiledAngle = SwerveMath.clamp(getAbsPosition() - encoderOffset.get()) * 360;
+        double unceiledAngle = getAbsPosition() * 360;
         return Math.round(unceiledAngle);
     }
 
@@ -98,27 +102,24 @@ public abstract class SwerveModuleBase implements ModuleConfiguration {
     }
 
     public void setDesiredState(SwerveModuleState currState) {
-        double target = currState.angle.getDegrees();
+        double target = SwerveMath.clamp(currState.angle.getDegrees());
         setTargetAng(target);
 
         swerveModuleHeading.getEntry().setDouble(getModuleAngle());
         targetVelocity.getEntry().setDouble(currState.speedMetersPerSecond);
         moduleState.setNetworkEntryValue(currState.toString());
-        //convert velocity to speed
+
+        // //convert velocity to speed
         final double[] constrainedTurning = SwerveMath.calculateFastestTurn(
-                getModuleAngle(),
-                target, currState.speedMetersPerSecond);
-
-        final double turnOutput = angularPID.calculate(constrainedTurning[0] / 360);
-        final double turnFF = angularFeedForward.calculate(angularPID.getSetpoint().velocity);
-
-        easyMotion(constrainedTurning[1], turnOutput);
+                    Math.toRadians(getModuleAngle()),
+                    Math.toRadians(target), currState.speedMetersPerSecond);
+        
+        setModule(constrainedTurning[1], constrainedTurning[0]);
     }
 
     public void updateDrivePIDs(PIDController drivePID, ProfiledPIDController angularPID) {
-        this.drivePID = drivePID;
-        this.angularPID = angularPID;
-        this.drivePID.setTolerance(1, 0.1);
+        DRIVE_PID_ARRAY = new double[] {drivePID.getP(), drivePID.getI(), drivePID.getD()};
+        ANGULAR_PID_ARRAY = new double[] {angularPID.getP(), angularPID.getI(), angularPID.getD()};
     }
 
     public void singlePointTo() {

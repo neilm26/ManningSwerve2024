@@ -72,7 +72,7 @@ public class SwerveModuleHybridMK1 extends SwerveModuleBase {
     }
 
     @Override
-    public void easyMotion(double drive, double turn) { 
+    public void setModule(double drive, double turn) { 
         driveMotor.getPIDController().setReference((drive*MAX_DRIVE_RPM), ControlType.kVelocity);
         turnMotor.set(TalonSRXControlMode.PercentOutput, turn);
     }

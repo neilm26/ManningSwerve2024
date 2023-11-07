@@ -14,5 +14,5 @@ public interface ModuleConfiguration {
     void configureSettings();
     void initalize(boolean isReversedDrive, boolean isReversedTurn, int driveId, int turnId, int analogId, 
                             Pair<Integer,Integer> driveEncId);
-    void easyMotion(double drive, double turn);
+    void setModule(double drive, double turn);
 }

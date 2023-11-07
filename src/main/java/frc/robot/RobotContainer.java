@@ -54,7 +54,7 @@ public class RobotContainer {
       () -> driverController.getRawAxis(2),
       () -> driverController.getRawAxis(3), 
       () -> driverController.x().getAsBoolean(),
-      () -> true);
+      () -> false);
 
   private OrbitControl orbitControl = new OrbitControl(drivetrain,
       driverController::getRightX,
@@ -67,7 +67,7 @@ public class RobotContainer {
 
   public RobotContainer() {
     NetworkTableContainer.insertGlobalEntries();
-    setUpPathOptions();
+    //setUpPathOptions();
     configureBindings();
   }
 

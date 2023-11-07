@@ -14,6 +14,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Utilities;
 import frc.robot.Constants.SwerveConstants;
 
@@ -52,13 +53,16 @@ public class SwerveMath {
         return new double[] { turnAmount, clampedSpeed };
     }
 
-    public static double[] calculateFastestTurn(double currAngle, double targetAngle, double driveSpeed) {
-        double originalHeading = targetAngle - currAngle;
-        if (Math.abs(originalHeading) > 90 && Math.abs(originalHeading) < 270) {
-            originalHeading = Math.IEEEremainder(originalHeading, 180);
+    public static double[] calculateFastestTurn(double currRadians, double targetRadians, double driveSpeed) {
+        double errorInHeading = targetRadians - currRadians;
+        double absErrorInHeading = Math.abs(errorInHeading);
+
+        if (absErrorInHeading > Math.PI / 2) {
+            errorInHeading = absErrorInHeading > (3*Math.PI) / 2 ? -1*(absErrorInHeading -= 2 * Math.PI)
+                    : Math.IEEEremainder((Math.PI + errorInHeading), 2 * Math.PI);
             driveSpeed *= -1;
         }
-        return new double[] { originalHeading, driveSpeed };
+        return new double[] { errorInHeading, driveSpeed };
     }
 
     public static boolean canBeginSkewCompensation(ChassisSpeeds chassisSpeeds) {
@@ -78,13 +82,13 @@ public class SwerveMath {
     }
 
 
-    public static double clamp(double encPos) {
-        if (encPos > 0.5) {
-            return encPos - 1;
-        } else if (encPos < -0.5) {
-            return encPos + 1;
+    public static double clamp(double angle) {
+        if (angle < 0) {
+            return angle + 360;
+        } else if (angle > 360) {
+            return angle - 360;
         }
-        return encPos;
+        return angle;
     }
 
     public static ChassisSpeeds getFieldRelativeChassisSpeeds(ChassisSpeeds robotCentricSpeeds, Rotation2d robotAngle) {

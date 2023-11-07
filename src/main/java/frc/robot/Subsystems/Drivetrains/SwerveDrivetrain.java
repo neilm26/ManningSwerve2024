@@ -76,7 +76,8 @@ public abstract class SwerveDrivetrain extends Subsystem {
 
   private void initializeAllModules() {
     try {
-      //backLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
+      frontLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.FRONT_LEFT,
+       false, true, 0, 1, 0, 5, 8);
       //frontRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
       //frontLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
       //backRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
@@ -180,17 +181,6 @@ public abstract class SwerveDrivetrain extends Subsystem {
     SmartDashboard.putBoolean("isSkewing", isSkewing);
     SmartDashboard.putNumber("current heading", currentHeading);
     SmartDashboard.putNumber("target heading", targetHeading);
-
-    if (isSkewing) {
-      double correction = SwerveMath.compensateForSkewAngular(TIMEOUT_MS, currentHeading, targetHeading,
-          COMPENSATION_PID_CONTROLLER);
-      this.chassisSpeeds = new ChassisSpeeds(
-          chassisSpeeds.vxMetersPerSecond,
-          chassisSpeeds.vyMetersPerSecond,
-          chassisSpeeds.omegaRadiansPerSecond + correction);
-    } else {
-      targetHeading = currentHeading;
-    }
 
     SwerveModuleState[] states = (centerOfRotation != null)
         ? driveKinematics.toSwerveModuleStates(this.chassisSpeeds, centerOfRotation)

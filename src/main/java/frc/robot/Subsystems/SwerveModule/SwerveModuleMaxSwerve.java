@@ -3,17 +3,20 @@ package frc.robot.Subsystems.SwerveModule;
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.SparkMaxRelativeEncoder;
+import com.revrobotics.SparkMaxAbsoluteEncoder.Type;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.SparkMaxRelativeEncoder.Type;
 
 import edu.wpi.first.math.Pair;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.AnalogEncoder;
-import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Utilities;
 import frc.robot.Subsystems.Drivetrains.SwerveDrivetrain;
 import frc.robot.Subsystems.Networking.NetworkTableContainer;
@@ -25,22 +28,25 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
     //should have an interface for motor types as well.
     private CANSparkMax driveMotor;
     private CANSparkMax turnMotor;
-    private AnalogEncoder turnEncoder;
-    private Encoder driveEncoder;
+    private AbsoluteEncoder turnEncoder;
+
+    private SparkMaxPIDController drivePIDController, angularPIDController;
+
+    private RelativeEncoder driveEncoder;
 
     @Override
     public double getAbsPosition() {
-        return turnEncoder.getAbsolutePosition();
+        return turnEncoder.getPosition();
     }
 
     @Override
     public double getModuleVelocity() {
-        return driveMotor.getClosedLoopRampRate();
+        return driveEncoder.getVelocity();
     }
 
     @Override
     public double getDistanceTravelled() {
-        return driveEncoder.getDistance(); }
+        return driveEncoder.getPosition(); }
 
     @Override
     public void configureSettings() {
@@ -48,23 +54,52 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
 
         Utilities.attemptToConfigureThrow(driveMotor.restoreFactoryDefaults(), "cannot factory reset spark max!");
 
-        //I call this: the config flood
-        //seriously though, ugly.
-        driveMotor.setSmartCurrentLimit(100, 20);
-        driveMotor.setControlFramePeriodMs(100);
+        driveMotor.restoreFactoryDefaults();
+        turnMotor.restoreFactoryDefaults();
         
-        double velConvFactor = MAX_DRIVE_RPM * GEAR_RATIO * Units.inchesToMeters(Math.PI * WHEEL_DIAMETER) / 60;
-        driveMotor.getEncoder(Type.kHallSensor, 42)
-            .setVelocityConversionFactor(velConvFactor);
+        driveMotor.setSmartCurrentLimit(40);
+        driveMotor.setControlFramePeriodMs(100);
 
-        turnMotor.setSmartCurrentLimit(30);
-        turnMotor.setControlFramePeriodMs(250);
+        turnMotor.setSmartCurrentLimit(20);
+
+        driveEncoder.setVelocityConversionFactor(DRIVE_VELOCITY_CONVERSION);
+
+        drivePIDController = driveMotor.getPIDController();
+        angularPIDController  = turnMotor.getPIDController();
+
+        drivePIDController.setFeedbackDevice(driveEncoder);
+        angularPIDController.setFeedbackDevice(turnEncoder);
+
+        angularPIDController.setPositionPIDWrappingEnabled(true);
+        angularPIDController.setPositionPIDWrappingMinInput(0);
+        angularPIDController.setPositionPIDWrappingMaxInput(TURN_ENCODER_POS_FACTOR);
+        angularPIDController.setFF(SPARK_PID_TURN_FF);
+        drivePIDController.setFF(SPARK_PID_DRIVE_FF);
+
+        turnEncoder.setInverted(TURNING_ENCODER_INVERTED);
+
+        turnMotor.setIdleMode(TURN_MOTOR_IDLE_MODE);
+
+        driveMotor.burnFlash(); turnMotor.burnFlash();
     }
 
+
+
     @Override
-    public void easyMotion(double drive, double turn) { 
-        driveMotor.getPIDController().setReference(drive, ControlType.kVelocity);
-        turnMotor.set(turn);
+    public void setModule(double drive, double turn) { 
+        angularPIDController.setP(ANGULAR_PID_ARRAY[0]);
+        angularPIDController.setI(ANGULAR_PID_ARRAY[1]);
+        angularPIDController.setD(ANGULAR_PID_ARRAY[2]);
+
+        drivePIDController.setP(DRIVE_PID_ARRAY[0]);
+        drivePIDController.setI(DRIVE_PID_ARRAY[1]);
+        drivePIDController.setD(DRIVE_PID_ARRAY[2]);
+
+        driveMotor.burnFlash(); turnMotor.burnFlash();
+        
+        drivePIDController.setReference(drive, CANSparkMax.ControlType.kVelocity);
+        angularPIDController.setReference(turn, CANSparkMax.ControlType.kPosition);
+
     }
 
     public void networkTableDrive() {
@@ -78,13 +113,16 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
         int driveId, int turnId, int analogEncoderId, Pair<Integer,Integer> channels) {
         driveMotor = new CANSparkMax(driveId, MotorType.kBrushless);
         turnMotor = new CANSparkMax(turnId, MotorType.kBrushless);
-        turnEncoder = new AnalogEncoder(analogEncoderId);
-        driveEncoder = new Encoder(channels.getFirst(), channels.getSecond());
+
+        driveMotor.restoreFactoryDefaults();
+        turnMotor.restoreFactoryDefaults();
+
+        turnEncoder = turnMotor.getAbsoluteEncoder(Type.kDutyCycle);
+        driveEncoder = driveMotor.getEncoder(SparkMaxRelativeEncoder.Type.kHallSensor, 42);
+
         driveMotor.setInverted(isReversedDrive);
         turnMotor.setInverted(isReversedTurn);
 
         configureSettings();
-
-        driveMotor.burnFlash();
     }
 }

@@ -22,6 +22,7 @@ public class ChassisControl extends Command {
   private SwerveDrivetrain drivetrain;
   private Supplier<Double> leftXAxis, leftYAxis, leftTrigger, rightTrigger;
   private Supplier<Boolean> fieldCentric, pivotToggle;
+  private ChassisSpeeds scaledSpeeds;
 
   public ChassisControl(SwerveDrivetrain drivetrain,
       Supplier<Double> leftXAxis,
@@ -50,33 +51,33 @@ public class ChassisControl extends Command {
   @Override
   public void execute() {
     Translation2d pivot = (pivotToggle.get()) ? BACK_LEFT_OFFSET : null;
+    
+    ChassisSpeeds chassisSpeeds = new ChassisSpeeds(-leftXAxis.get(), leftYAxis.get(),
+          Math.pow(rightTrigger.get() - leftTrigger.get(), 3));
 
     if (fieldCentric.get()) {
 
       //CHASSIS SPEEDS AFTER NOTHER FOOKING CHASSIS SPEEDS
       //MY GOD THIS NEEDS TO BE CHANGED ONCE I FIND THE SOLUTION
 
-      ChassisSpeeds chassisSpeeds = new ChassisSpeeds(-leftXAxis.get(), leftYAxis.get(),
-          Math.pow(rightTrigger.get() - leftTrigger.get(), 3));
-
       ChassisSpeeds fieldCentricSpeeds = SwerveMath.getFieldRelativeChassisSpeeds(chassisSpeeds,
           drivetrain.getPigeonRotation2d());
 
       //fieldCentricSpeeds are percentage based
-      ChassisSpeeds scaledSpeeds = new ChassisSpeeds(fieldCentricSpeeds.vxMetersPerSecond * MAX_SPEED,
+      scaledSpeeds = new ChassisSpeeds(fieldCentricSpeeds.vxMetersPerSecond * MAX_SPEED,
           fieldCentricSpeeds.vyMetersPerSecond * MAX_SPEED, fieldCentricSpeeds.omegaRadiansPerSecond * MAX_TURN_SPEED_SCALE);
    
       SmartDashboard.putNumber("distance travelled X: ", drivetrain.getOdometry().getPoseMeters().getX());
       SmartDashboard.putNumber("distance travelled Y: ", drivetrain.getOdometry().getPoseMeters().getY());
 
       drivetrain.updateSkew(SwerveMath.canBeginSkewCompensation(scaledSpeeds));
-
-      drivetrain.setCentralMotion(scaledSpeeds, pivot);
-
     } else {
-      drivetrain.setCentralMotion(
-          new ChassisSpeeds(leftXAxis.get(), leftYAxis.get(), (leftTrigger.get() - rightTrigger.get())), pivot);
+      scaledSpeeds = new ChassisSpeeds(chassisSpeeds.vxMetersPerSecond * MAX_SPEED, 
+          chassisSpeeds.vyMetersPerSecond * MAX_SPEED, chassisSpeeds.omegaRadiansPerSecond * MAX_TURN_SPEED_SCALE);
     }
+    
+    drivetrain.setCentralMotion(scaledSpeeds, pivot);
+
     for (Entry<ModuleNames, SwerveModuleState> state : SwerveDrivetrain.stateMap.entrySet()) {
       SmartDashboard.putNumberArray(state.getKey().toString(),
           new Double[] { state.getValue().angle.getDegrees(), state.getValue().speedMetersPerSecond });
