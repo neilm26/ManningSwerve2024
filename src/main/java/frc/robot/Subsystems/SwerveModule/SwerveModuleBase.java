@@ -25,9 +25,6 @@ public abstract class SwerveModuleBase implements ModuleConfiguration {
     protected NetworkEntry swerveModuleTargetHeading, headingSlider, 
     moduleState, swerveModuleHeading, distanceTravelled, driveVelocity, targetVelocity;
 
-    protected PIDController drivePID = DRIVE_PID_CONTROLLER;
-    protected ProfiledPIDController angularPID = MODULE_HEADING_PID_CONTROLLER;
-
     protected SimpleMotorFeedforward driveFeedForward = DRIVE_FEEDFORWARD;
     protected SimpleMotorFeedforward angularFeedForward = TURN_FEEDFORWARD;
 
