@@ -76,11 +76,14 @@ public abstract class SwerveDrivetrain extends Subsystem {
 
   private void initializeAllModules() {
     try {
+      frontRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.FRONT_RIGHT,
+       true, true, 8, 1);
       frontLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.FRONT_LEFT,
-       false, true, 0, 1, 0, 5, 8);
-      //frontRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
-      //frontLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
-      //backRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule();
+        false, false, 11, 6);
+      backLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.BACK_LEFT,
+      false, false, 9, 12);
+      backRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.BACK_RIGHT,
+      false, false, 5, 7);
 
       driveKinematics = new SwerveDriveKinematics(OFFSET_ARRAY);
       driveOdometry = new SwerveDriveOdometry(driveKinematics,
@@ -181,6 +184,7 @@ public abstract class SwerveDrivetrain extends Subsystem {
     SmartDashboard.putBoolean("isSkewing", isSkewing);
     SmartDashboard.putNumber("current heading", currentHeading);
     SmartDashboard.putNumber("target heading", targetHeading);
+    SmartDashboard.putNumber("CHASSIS SPEEDS: ", this.chassisSpeeds.vxMetersPerSecond);
 
     SwerveModuleState[] states = (centerOfRotation != null)
         ? driveKinematics.toSwerveModuleStates(this.chassisSpeeds, centerOfRotation)
@@ -193,6 +197,7 @@ public abstract class SwerveDrivetrain extends Subsystem {
         i -> states[i]));
     for (SwerveModuleBase module : getModules()) {
       module.setDesiredState(getModuleState(module.getModuleName()));
+      SmartDashboard.putNumber(module.getModuleName().name(), getModuleState(module.getModuleName()).speedMetersPerSecond);
     }
   }
 

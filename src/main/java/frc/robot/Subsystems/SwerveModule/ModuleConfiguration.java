@@ -12,7 +12,5 @@ public interface ModuleConfiguration {
     double getModuleVelocity();
     double getDistanceTravelled();
     void configureSettings();
-    void initalize(boolean isReversedDrive, boolean isReversedTurn, int driveId, int turnId, int analogId, 
-                            Pair<Integer,Integer> driveEncId);
     void setModule(double drive, double turn);
 }

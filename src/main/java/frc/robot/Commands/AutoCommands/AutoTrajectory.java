@@ -30,7 +30,7 @@ public class AutoTrajectory extends Command {
     // Use addRequirements() here to declare subsystem dependencies.
     this.drivetrain = drivetrain;
 
-    trajectory = PathPlanner.loadPath("TestPath", new PathConstraints(0.5, 0.1));
+    trajectory = PathPlanner.loadPath("StraightPath", new PathConstraints(0.5, 0.1));
 
     Transform2d offset = trajectory.getInitialHolonomicPose().minus(drivetrain.getOdometry().getPoseMeters());
 
@@ -47,6 +47,7 @@ public class AutoTrajectory extends Command {
 
     drivetrain.resetModuleHeadings();
     drivetrain.resetOdometry(startingPos);
+    
 
     timer.restart();
   }

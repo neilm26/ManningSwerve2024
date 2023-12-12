@@ -79,7 +79,7 @@ public class RobotContainer {
 
     autoPathChooser.setDefaultOption("Auto Drive Timed", autoForward);
 
-    autoPathChooser.addOption("Turnpath", autoPathPathPlanner);
+    autoPathChooser.addOption("StraightPath", autoPathPathPlanner);
 
     autoPathChooser.addOption("testTraj", testTrajJson);
 
@@ -106,7 +106,7 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return autoPathChooser.getSelected();
+    return autoForward;
   }
 
   public void pollEvent() {

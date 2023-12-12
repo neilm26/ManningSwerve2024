@@ -17,7 +17,7 @@ import static frc.robot.Constants.SwerveConstants.*;
 public class AutoPath {
   /** Creates a new AutoPath. */
   private SwerveDrivetrain drivetrain;
-  private PathPlannerTrajectory trajectory = PathPlanner.loadPath("TestPath", new PathConstraints(0.4, 0.12));
+  private PathPlannerTrajectory trajectory = PathPlanner.loadPath("StraightPath", new PathConstraints(0.4, 0.12));
   
   public SwerveControllerCommand autoCommand;
 

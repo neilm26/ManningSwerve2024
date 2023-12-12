@@ -34,10 +34,10 @@ public class AutoForward extends Command {
   @Override
   public void execute() {
     
-    ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0, 0.1,0.0);
+    ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0, 1,0.0);
 
     if (timer.get() <= 10) {
-      drivetrain.setCentralMotion(SwerveMath.getFieldRelativeChassisSpeeds(chassisSpeeds, drivetrain.getPigeonRotation2d()), null);
+      drivetrain.setCentralMotion(chassisSpeeds, null);
     }
   }
 

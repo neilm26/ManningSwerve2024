@@ -65,7 +65,7 @@ public class ChassisControl extends Command {
 
       //fieldCentricSpeeds are percentage based
       scaledSpeeds = new ChassisSpeeds(fieldCentricSpeeds.vxMetersPerSecond * MAX_SPEED,
-          fieldCentricSpeeds.vyMetersPerSecond * MAX_SPEED, fieldCentricSpeeds.omegaRadiansPerSecond * MAX_TURN_SPEED_SCALE);
+          fieldCentricSpeeds.vyMetersPerSecond * MAX_SPEED, fieldCentricSpeeds.omegaRadiansPerSecond * MAX_SPEED);
    
       SmartDashboard.putNumber("distance travelled X: ", drivetrain.getOdometry().getPoseMeters().getX());
       SmartDashboard.putNumber("distance travelled Y: ", drivetrain.getOdometry().getPoseMeters().getY());

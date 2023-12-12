@@ -82,7 +82,6 @@ public class SwerveModuleHybridMK1 extends SwerveModuleBase {
         turnMotor.set(TalonSRXControlMode.PercentOutput,0);
     }
 
-    @Override
     public void initalize(boolean isReversedDrive, boolean isReversedTurn, int driveId, int turnId, int analogEncoderId, Pair<Integer,Integer> channels) {
         driveMotor = new CANSparkMax(driveId, MotorType.kBrushless);
         turnMotor = new TalonSRX(turnId);

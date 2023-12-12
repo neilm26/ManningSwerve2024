@@ -60,8 +60,12 @@ public class SwerveMath {
         if (absErrorInHeading > Math.PI / 2) {
             errorInHeading = absErrorInHeading > (3*Math.PI) / 2 ? -1*(absErrorInHeading -= 2 * Math.PI)
                     : Math.IEEEremainder((Math.PI + errorInHeading), 2 * Math.PI);
+        }
+
+        if (absErrorInHeading < Math.PI/4) {
             driveSpeed *= -1;
         }
+
         return new double[] { errorInHeading, driveSpeed };
     }
 

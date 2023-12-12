@@ -31,6 +31,8 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
     private AbsoluteEncoder turnEncoder;
 
     private SparkMaxPIDController drivePIDController, angularPIDController;
+    private PIDController offSidePIDController = new PIDController(0.5, 0, 0);
+    private double error = 0;
 
     private RelativeEncoder driveEncoder;
 
@@ -63,6 +65,7 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
         turnMotor.setSmartCurrentLimit(20);
 
         driveEncoder.setVelocityConversionFactor(DRIVE_VELOCITY_CONVERSION);
+        driveEncoder.setPositionConversionFactor(DRIVE_POSITION_CONVERSION);
 
         drivePIDController = driveMotor.getPIDController();
         angularPIDController  = turnMotor.getPIDController();
@@ -71,7 +74,7 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
         angularPIDController.setFeedbackDevice(turnEncoder);
 
         angularPIDController.setPositionPIDWrappingEnabled(true);
-        angularPIDController.setPositionPIDWrappingMinInput(0);
+        angularPIDController.setPositionPIDWrappingMinInput(-TURN_ENCODER_POS_FACTOR);
         angularPIDController.setPositionPIDWrappingMaxInput(TURN_ENCODER_POS_FACTOR);
         angularPIDController.setFF(SPARK_PID_TURN_FF);
         drivePIDController.setFF(SPARK_PID_DRIVE_FF);
@@ -79,11 +82,10 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
         turnEncoder.setInverted(TURNING_ENCODER_INVERTED);
 
         turnMotor.setIdleMode(TURN_MOTOR_IDLE_MODE);
+        driveMotor.setIdleMode(DRIVE_MOTOR_IDLE_MODE);
 
         driveMotor.burnFlash(); turnMotor.burnFlash();
     }
-
-
 
     @Override
     public void setModule(double drive, double turn) { 
@@ -97,9 +99,12 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
 
         driveMotor.burnFlash(); turnMotor.burnFlash();
         
+        if (turn <= (4*Math.PI/180) && (turn > (Math.PI/180))) {
+           error = offSidePIDController.calculate(turn);
+        }
+
         drivePIDController.setReference(drive, CANSparkMax.ControlType.kVelocity);
         angularPIDController.setReference(turn, CANSparkMax.ControlType.kPosition);
-
     }
 
     public void networkTableDrive() {
@@ -107,10 +112,9 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
         turnMotor.set(0);
     }
 
-    @Override
     public void initalize(boolean isReversedDrive, 
         boolean isReversedTurn, 
-        int driveId, int turnId, int analogEncoderId, Pair<Integer,Integer> channels) {
+        int driveId, int turnId) {
         driveMotor = new CANSparkMax(driveId, MotorType.kBrushless);
         turnMotor = new CANSparkMax(turnId, MotorType.kBrushless);
 

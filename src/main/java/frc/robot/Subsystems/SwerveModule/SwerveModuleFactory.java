@@ -6,11 +6,10 @@ import frc.robot.Constants.SwerveConstants.ModuleNames;
 public class SwerveModuleFactory {
 
     public static SwerveModuleBase createNeoMk4invertedModule(ModuleNames moduleName, boolean isReversedDrive, 
-                    boolean isReversedTurn, int ch1, int ch2, int turnEncId, int driveId, int turnId) {
+                    boolean isReversedTurn, int driveId, int turnId) {
         SwerveModuleMaxSwerve maxSwerve = new SwerveModuleMaxSwerve();
 
-        maxSwerve.initalize(isReversedDrive, isReversedTurn, driveId, turnId, turnEncId, 
-                new Pair<Integer,Integer>(ch1, ch2));
+        maxSwerve.initalize(isReversedDrive, isReversedTurn, driveId, turnId);
         maxSwerve.calibrate(moduleName, ()->0.0);
         maxSwerve.configureSettings();
 
