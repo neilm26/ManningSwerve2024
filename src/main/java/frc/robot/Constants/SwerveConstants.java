@@ -1,6 +1,8 @@
 package frc.robot.Constants;
 
 
+import java.util.HashMap;
+
 import com.revrobotics.CANSparkMax.IdleMode;
 
 import edu.wpi.first.math.controller.HolonomicDriveController;
@@ -29,14 +31,18 @@ public class SwerveConstants {
     public static final double HOME_ANALOG_ENC_POS_BACK_RIGHT = -0.0388888888888889;
 
     public static final double MAX_SPEED = 4.803648; //15.76 ft/sec to m/s
+    public static final double MAX_CORRECTION_SPEED = 2.803648;
     public static final double MAX_ACCEL = 1.4;
 
     public static final double MAX_DRIVE_RPM = 5700;
 
     public static final double MAX_POINT_SPEED = 0.25;
-    public static final double MAX_TURN_SPEED_SCALE = 1;
+    public static final double MAX_TURN_SPEED_SCALE = 1.2;
 
     public static final double TIMEOUT_MS = 5;
+    public static final double LOOKAHEAD_S = 0.02;
+    public static final double kEps = 1E-9;
+
 
     public static final double TEETH_PINION = 14;
 
@@ -48,25 +54,26 @@ public class SwerveConstants {
     //Driving encoder gear of module MK1 is 48 teeth.
 
 
-    public static final Translation2d FRONT_RIGHT_OFFSET = new Translation2d(WHEEL_BASE/2, TRACK_WIDTH/2);
-    public static final Translation2d FRONT_LEFT_OFFSET = new Translation2d(-WHEEL_BASE/2, TRACK_WIDTH/2);
-    public static final Translation2d BACK_RIGHT_OFFSET = new Translation2d(-WHEEL_BASE/2, -TRACK_WIDTH/2);
-    public static final Translation2d BACK_LEFT_OFFSET = new Translation2d(WHEEL_BASE/2, -TRACK_WIDTH/2);
+    public static final Translation2d BACK_LEFT_OFFSET = new Translation2d(-WHEEL_BASE/2, -TRACK_WIDTH/2);
+    public static final Translation2d BACK_RIGHT_OFFSET = new Translation2d(WHEEL_BASE/2, -TRACK_WIDTH/2);
+    public static final Translation2d FRONT_RIGHT_OFFSET = new Translation2d(-WHEEL_BASE/2, TRACK_WIDTH/2);
+    public static final Translation2d FRONT_LEFT_OFFSET = new Translation2d(WHEEL_BASE/2,TRACK_WIDTH/2);
 
 
-    public static final Translation2d[] OFFSET_ARRAY = new Translation2d[] {FRONT_LEFT_OFFSET, FRONT_RIGHT_OFFSET, BACK_LEFT_OFFSET, BACK_RIGHT_OFFSET};
+    public static final Translation2d[] OFFSET_ARRAY = new Translation2d[] {FRONT_RIGHT_OFFSET, FRONT_LEFT_OFFSET, BACK_RIGHT_OFFSET, BACK_LEFT_OFFSET};
 
 
     public static double SPARK_PID_DRIVE_FF = 0.195;
-    public static double SPARK_PID_TURN_FF = 0.2;
+    public static double SPARK_PID_TURN_FF = 0.11;
 
 
-    public static PIDController DRIVE_PID_CONTROLLER = new PIDController(0.00, 0.000, 0.0);
+    public static PIDController DRIVE_PID_CONTROLLER = new PIDController(0.15, 0.000, 0.0);
     public static ProfiledPIDController ANGULAR_PID_CONTROLLER = new ProfiledPIDController(0.087, 0, 0, new TrapezoidProfile.Constraints(MAX_SPEED, MAX_ACCEL));
 
     public static PIDController COMPENSATION_PID_CONTROLLER = new PIDController(1, 0.04, 0.006);
-    public static ProfiledPIDController MODULE_HEADING_PID_CONTROLLER = new ProfiledPIDController(0.0009, 0, 0,
-                            new TrapezoidProfile.Constraints(MAX_SPEED, MAX_ACCEL));
+    public static PIDController MODULE_HEADING_PID_CONTROLLER = new PIDController(0.0009, 0, 0);
+    public static ProfiledPIDController MODULE_VELOCITY_PID_CONTROLLER = new ProfiledPIDController(0.4, 0, 0, new TrapezoidProfile.Constraints(MAX_SPEED, MAX_ACCEL));
+    public static PIDController COMPENSATION_ANGULAR_PID_CONTROLLER = new PIDController(0.0011, 0.0002, 0.00009);
 
     
     public static SimpleMotorFeedforward TURN_FEEDFORWARD = new SimpleMotorFeedforward(0.06, 0.02);
@@ -84,6 +91,15 @@ public class SwerveConstants {
         BACK_LEFT
     }    
 
+    public static HashMap<ModuleNames, Translation2d> offsetMap = new HashMap<ModuleNames, Translation2d>();
+
+    public static void initializeOffsetMap() {
+        offsetMap.put(ModuleNames.FRONT_RIGHT, OFFSET_ARRAY[0]);
+        offsetMap.put(ModuleNames.FRONT_LEFT, OFFSET_ARRAY[1]);
+        offsetMap.put(ModuleNames.BACK_RIGHT, OFFSET_ARRAY[2]);
+        offsetMap.put(ModuleNames.BACK_LEFT, OFFSET_ARRAY[3]);
+    }
+
     public static double[] DRIVE_PID_ARRAY = new double[] {0,0,0,0};
     public static double[] ANGULAR_PID_ARRAY = new double[] {0,0,0,0};
 
@@ -91,6 +107,6 @@ public class SwerveConstants {
     public static final double TURN_ENCODER_POS_FACTOR = (2*Math.PI);
     public static final double TURN_ENCODER_VELO_FACTOR = (2*Math.PI) / 60;
     public static final IdleMode TURN_MOTOR_IDLE_MODE = IdleMode.kBrake;
-    public static final IdleMode DRIVE_MOTOR_IDLE_MODE = IdleMode.kBrake;
+    public static final IdleMode DRIVE_MOTOR_IDLE_MODE = IdleMode.kCoast;
 
 }

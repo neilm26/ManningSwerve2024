@@ -65,7 +65,7 @@ public class AutoTrajectory extends Command {
     
     SmartDashboard.putNumber("turnspeed", chassisSpeeds.omegaRadiansPerSecond);
     SmartDashboard.putNumber("target holo heading:", state.holonomicRotation.getDegrees());
-    SmartDashboard.putNumber("drivetrain heading: ", drivetrain.getPigeonRotation2d().getDegrees());
+    SmartDashboard.putNumber("drivetrain heading: ", drivetrain.getPigeonRotation2dEM().getDegrees());
 
     drivetrain.setCentralMotion(chassisSpeeds, null);
 
@@ -76,7 +76,7 @@ public class AutoTrajectory extends Command {
   @Override
   public void end(boolean interrupted) {
     drivetrain.updateSkew(false);
-    drivetrain.reface(drivetrain.getPigeonRotation2d().getDegrees(), trajectory.getEndState().holonomicRotation.getDegrees());
+    drivetrain.reface(drivetrain.getPigeonRotation2dEM().getDegrees(), trajectory.getEndState().holonomicRotation.getDegrees());
     timer.stop();
   }
 

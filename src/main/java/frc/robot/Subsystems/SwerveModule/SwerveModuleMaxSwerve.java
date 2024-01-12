@@ -1,8 +1,5 @@
 package frc.robot.Subsystems.SwerveModule;
 
-import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -12,11 +9,8 @@ import com.revrobotics.SparkMaxAbsoluteEncoder.Type;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import frc.robot.Utilities;
 import frc.robot.Subsystems.Drivetrains.SwerveDrivetrain;
 import frc.robot.Subsystems.Networking.NetworkTableContainer;
@@ -31,19 +25,25 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
     private AbsoluteEncoder turnEncoder;
 
     private SparkMaxPIDController drivePIDController, angularPIDController;
-    private PIDController offSidePIDController = new PIDController(0.5, 0, 0);
-    private double error = 0;
+    private PIDController offSidePIDController = COMPENSATION_ANGULAR_PID_CONTROLLER;
+    private ProfiledPIDController offSideVeloPIDController = MODULE_VELOCITY_PID_CONTROLLER;
+    private double headingError = 0;
+    private double velocityError = 0;
 
     private RelativeEncoder driveEncoder;
 
     @Override
     public double getAbsPosition() {
-        return turnEncoder.getPosition();
+        return Math.abs(turnEncoder.getPosition());
     }
 
     @Override
     public double getModuleVelocity() {
         return driveEncoder.getVelocity();
+    }
+
+    public double getAngularModuleVelocity() {
+        return turnEncoder.getVelocity();
     }
 
     @Override
@@ -66,18 +66,23 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
 
         driveEncoder.setVelocityConversionFactor(DRIVE_VELOCITY_CONVERSION);
         driveEncoder.setPositionConversionFactor(DRIVE_POSITION_CONVERSION);
+        turnEncoder.setPositionConversionFactor(1.005);
+        turnEncoder.setVelocityConversionFactor(TURN_ENCODER_VELO_FACTOR);
 
         drivePIDController = driveMotor.getPIDController();
         angularPIDController  = turnMotor.getPIDController();
 
         drivePIDController.setFeedbackDevice(driveEncoder);
+
         angularPIDController.setFeedbackDevice(turnEncoder);
 
         angularPIDController.setPositionPIDWrappingEnabled(true);
         angularPIDController.setPositionPIDWrappingMinInput(-TURN_ENCODER_POS_FACTOR);
         angularPIDController.setPositionPIDWrappingMaxInput(TURN_ENCODER_POS_FACTOR);
+
         angularPIDController.setFF(SPARK_PID_TURN_FF);
         drivePIDController.setFF(SPARK_PID_DRIVE_FF);
+
 
         turnEncoder.setInverted(TURNING_ENCODER_INVERTED);
 
@@ -88,23 +93,31 @@ public class SwerveModuleMaxSwerve extends SwerveModuleBase {
     }
 
     @Override
-    public void setModule(double drive, double turn) { 
-        angularPIDController.setP(ANGULAR_PID_ARRAY[0]);
-        angularPIDController.setI(ANGULAR_PID_ARRAY[1]);
-        angularPIDController.setD(ANGULAR_PID_ARRAY[2]);
+    public void setModule(double drive, double turn) {
 
-        drivePIDController.setP(DRIVE_PID_ARRAY[0]);
-        drivePIDController.setI(DRIVE_PID_ARRAY[1]);
-        drivePIDController.setD(DRIVE_PID_ARRAY[2]);
-
-        driveMotor.burnFlash(); turnMotor.burnFlash();
+        //Disable when NOT USING
         
-        if (turn <= (4*Math.PI/180) && (turn > (Math.PI/180))) {
-           error = offSidePIDController.calculate(turn);
+        // angularPIDController.setP(ANGULAR_PID_ARRAY[0]);
+        // angularPIDController.setI(ANGULAR_PID_ARRAY[1]);
+        // angularPIDController.setD(ANGULAR_PID_ARRAY[2]);
+
+        // angularPIDController.setFF(SPARK_PID_TURN_FF);
+
+
+        // offSideVeloPIDController.setP(DRIVE_PID_ARRAY[0]);
+        // offSideVeloPIDController.setI(DRIVE_PID_ARRAY[1]);
+        // offSideVeloPIDController.setD(DRIVE_PID_ARRAY[2]);
+
+        if (Math.abs(turn) < 0.2) {
+           headingError = offSidePIDController.calculate(SwerveMath.compensateAngularError(getTargetAng(), getModuleAngle()));
+           turnMotor.set(headingError);
+        }
+        else {
+            angularPIDController.setReference(turn, CANSparkMax.ControlType.kPosition);
         }
 
         drivePIDController.setReference(drive, CANSparkMax.ControlType.kVelocity);
-        angularPIDController.setReference(turn, CANSparkMax.ControlType.kPosition);
+
     }
 
     public void networkTableDrive() {

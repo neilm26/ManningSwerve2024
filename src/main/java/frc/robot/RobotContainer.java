@@ -45,16 +45,14 @@ public class RobotContainer {
   private TestTrajJson testTrajJson = new TestTrajJson(drivetrain);
 
   private SendableChooser<Command> autoPathChooser = new SendableChooser<>();
-  private SendableChooser<String> autoPathCustomizer = new SendableChooser<>();
-  private SendableChooser<Map<String, Double>> autoPathConfig = new SendableChooser<>();
   
   private ChassisControl chassisControl = new ChassisControl(drivetrain,
       driverController::getLeftY,
       driverController::getLeftX,
       () -> driverController.getRawAxis(2),
       () -> driverController.getRawAxis(3), 
-      () -> driverController.x().getAsBoolean(),
-      () -> false);
+      () -> driverController.x(),
+      () -> true);
 
   private OrbitControl orbitControl = new OrbitControl(drivetrain,
       driverController::getRightX,
@@ -67,7 +65,7 @@ public class RobotContainer {
 
   public RobotContainer() {
     NetworkTableContainer.insertGlobalEntries();
-    //setUpPathOptions();
+    setUpPathOptions();
     configureBindings();
   }
 

@@ -48,7 +48,7 @@ public class OrbitControl extends Command {
     drivetrain.setCentralMotion(
       SwerveMath.getFieldRelativeChassisSpeeds(
         chassisSpeeds,
-        drivetrain.getPigeonRotation2d()), null);
+        drivetrain.getPigeonRotation2dEM()), null);
   }
 
   // Called once the command ends or is interrupted.

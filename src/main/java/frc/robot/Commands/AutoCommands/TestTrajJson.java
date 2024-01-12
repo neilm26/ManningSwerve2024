@@ -45,7 +45,7 @@ public class TestTrajJson extends Command {
       Pose2d startingPos = trajectory.getInitialPose();
 
       drivetrain.getPigeon().setYaw(startingPos.getRotation().getDegrees());
-      drivetrain.reface(drivetrain.getPigeonRotation2d().getDegrees(), startingPos.getRotation().getDegrees());
+      drivetrain.reface(drivetrain.getPigeonRotation2dEM().getDegrees(), startingPos.getRotation().getDegrees());
 
       drivetrain.resetModuleHeadings();
       drivetrain.resetOdometry(startingPos);
@@ -69,7 +69,7 @@ public class TestTrajJson extends Command {
 
     SmartDashboard.putNumber("turnspeed", compensatedSpeeds.omegaRadiansPerSecond);
     SmartDashboard.putNumber("target holo heading:", idealRobotState.poseMeters.getRotation().getDegrees());
-    SmartDashboard.putNumber("drivetrain heading: ", drivetrain.getPigeonRotation2d().getDegrees());
+    SmartDashboard.putNumber("drivetrain heading: ", drivetrain.getPigeonRotation2dEM().getDegrees());
     
 
     drivetrain.setCentralMotion(compensatedSpeeds, null);

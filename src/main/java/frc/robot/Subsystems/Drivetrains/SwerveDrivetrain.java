@@ -24,6 +24,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -49,7 +51,7 @@ public abstract class SwerveDrivetrain extends Subsystem {
   private SwerveDriveKinematics driveKinematics;
   private SwerveDriveOdometry driveOdometry;
 
-  private ChassisSpeeds chassisSpeeds;
+  private ChassisSpeeds chassisSpeeds = new ChassisSpeeds(0, 0, 0);
 
   private WPI_Pigeon2 pigeon2;
 
@@ -57,10 +59,14 @@ public abstract class SwerveDrivetrain extends Subsystem {
 
   private double targetHeading;
   private double currentHeading;
+  
+  private Encoder encoder;
 
   private boolean isSkewing = false;
 
   protected void initialize() {
+    //encoder = new Encoder(0, 1);
+
     pigeon2 = new WPI_Pigeon2(PIGEON_ID);
 
     SmartDashboard.putData(field);
@@ -69,25 +75,29 @@ public abstract class SwerveDrivetrain extends Subsystem {
 
     SmartDashboard.putData("angularPID", MODULE_HEADING_PID_CONTROLLER);
     SmartDashboard.putData("drivePID", DRIVE_PID_CONTROLLER);
-    SmartDashboard.putData("compensationPID", COMPENSATION_PID_CONTROLLER);
+    SmartDashboard.putNumber("ANGULAR_FF", SPARK_PID_TURN_FF);
+   SmartDashboard.putData("compensationPID", COMPENSATION_PID_CONTROLLER);
+    SmartDashboard.putData("compensationAngularPID", COMPENSATION_ANGULAR_PID_CONTROLLER);
     SmartDashboard.putData("holonomicPID", SWERVE_PID_CONTROLLER.getThetaController());
     initializeAllModules();
   }
 
   private void initializeAllModules() {
+    initializeOffsetMap();
+
     try {
       frontRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.FRONT_RIGHT,
-       true, true, 8, 1);
+       true, false, 7, 8);
       frontLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.FRONT_LEFT,
-        false, false, 11, 6);
-      backLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.BACK_LEFT,
-      false, false, 9, 12);
+        false, false, 5, 6);
       backRightSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.BACK_RIGHT,
-      false, false, 5, 7);
+      false, false, 1, 2);
+      backLeftSwerveModule = SwerveModuleFactory.createNeoMk4invertedModule(ModuleNames.BACK_LEFT,
+      true, false, 3, 4);
 
       driveKinematics = new SwerveDriveKinematics(OFFSET_ARRAY);
       driveOdometry = new SwerveDriveOdometry(driveKinematics,
-          getPigeonRotation2d(), getModulePositionsNoKey());
+          getPigeonRotation2dEM(), getModulePositionsNoKey());
 
     } catch (NullPointerException e) {
       DriverStation.reportError("Cannot initialize modules! Please verify that module name(s) exist!", true);
@@ -143,20 +153,26 @@ public abstract class SwerveDrivetrain extends Subsystem {
     return pigeon2;
   }
 
-  public Rotation2d getPigeonRotation2d() {
-    return pigeon2.getRotation2d();
+  public Rotation2d getPigeonRotation2dEM() {
+    //temporary solution
+    // DO NOT CONFUSE WITH THIS: pigeon2.getRotation2d()
+    return Rotation2d.fromDegrees(-pigeon2.getYaw());
   }
 
   public SwerveModuleState getModuleState(ModuleNames moduleName) {
-    return stateMap.getOrDefault(moduleName, null);
+    return stateMap.getOrDefault(moduleName, new SwerveModuleState(0, Rotation2d.fromDegrees(0)));
   }
 
   public ChassisSpeeds getRobotMotion() {
-    return driveKinematics.toChassisSpeeds(stateMap.values().toArray(new SwerveModuleState[stateMap.size()]));
+    return driveKinematics.toChassisSpeeds(
+        getModuleState(ModuleNames.FRONT_RIGHT), 
+        getModuleState(ModuleNames.FRONT_LEFT),
+        getModuleState(ModuleNames.BACK_RIGHT),
+        getModuleState(ModuleNames.BACK_LEFT));
   }
 
   public void resetOdometry(Pose2d startPos) {
-    driveOdometry.resetPosition(getPigeonRotation2d(), getModulePositionsNoKey(), startPos);
+    driveOdometry.resetPosition(getPigeonRotation2dEM(), getModulePositionsNoKey(), startPos);
   }
 
   public void resetModuleHeadings() {
@@ -178,13 +194,9 @@ public abstract class SwerveDrivetrain extends Subsystem {
 
   public void setCentralMotion(ChassisSpeeds chassisSpeeds, Translation2d centerOfRotation) {
     this.chassisSpeeds = chassisSpeeds;
-
+    chassisSpeeds = SwerveMath.skewCompensation(chassisSpeeds);
+    
     currentHeading = getPigeon().getYaw();
-
-    SmartDashboard.putBoolean("isSkewing", isSkewing);
-    SmartDashboard.putNumber("current heading", currentHeading);
-    SmartDashboard.putNumber("target heading", targetHeading);
-    SmartDashboard.putNumber("CHASSIS SPEEDS: ", this.chassisSpeeds.vxMetersPerSecond);
 
     SwerveModuleState[] states = (centerOfRotation != null)
         ? driveKinematics.toSwerveModuleStates(this.chassisSpeeds, centerOfRotation)
@@ -196,8 +208,8 @@ public abstract class SwerveDrivetrain extends Subsystem {
         i -> ModuleNames.values()[i],
         i -> states[i]));
     for (SwerveModuleBase module : getModules()) {
+      module.updateRobotSpeeds(getRobotMotion());
       module.setDesiredState(getModuleState(module.getModuleName()));
-      SmartDashboard.putNumber(module.getModuleName().name(), getModuleState(module.getModuleName()).speedMetersPerSecond);
     }
   }
 
@@ -213,12 +225,18 @@ public abstract class SwerveDrivetrain extends Subsystem {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    //driveOdometry.update(getPigeonRotation2d(), getModulePositionsNoKey());
-
+    driveOdometry.update(getPigeonRotation2dEM(), getModulePositionsNoKey());
+    SmartDashboard.putNumber("robotPosX: ", driveOdometry.getPoseMeters().getTranslation().getX());
+    SmartDashboard.putNumber("robotPosY: ", driveOdometry.getPoseMeters().getTranslation().getY());
+    SmartDashboard.putNumber("robotPosHeading: ", driveOdometry.getPoseMeters().getRotation().getDegrees());
+    // SmartDashboard.putNumberArray("robotCurrentVelocities: ", new Double[] {
+    //       getRobotMotion().vxMetersPerSecond, getRobotMotion().vyMetersPerSecond, getRobotMotion().omegaRadiansPerSecond});
+    // SmartDashboard.putNumberArray("robotTargetVelocities: ", new Double[] {
+    //       chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond, chassisSpeeds.omegaRadiansPerSecond});
     for (SwerveModuleBase module : getModules()) {
       // try and update each module's state unless it cannot be found, then return an
       // empty module state.
-      module.updateDrivePIDs(DRIVE_PID_CONTROLLER, MODULE_HEADING_PID_CONTROLLER);
+      module.updateDrivePIDs(DRIVE_PID_CONTROLLER, MODULE_HEADING_PID_CONTROLLER, SmartDashboard.getNumber("ANGULAR_FF", 0.0));
       module.updateEntries();
     }
   }

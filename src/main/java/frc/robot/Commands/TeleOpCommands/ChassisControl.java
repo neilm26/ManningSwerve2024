@@ -12,6 +12,9 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+
 import static frc.robot.Constants.SwerveConstants.*;
 
 import frc.robot.Subsystems.Drivetrains.SwerveDrivetrain;
@@ -21,15 +24,22 @@ public class ChassisControl extends Command {
   /** Creates a new ChassisControl. */
   private SwerveDrivetrain drivetrain;
   private Supplier<Double> leftXAxis, leftYAxis, leftTrigger, rightTrigger;
-  private Supplier<Boolean> fieldCentric, pivotToggle;
+  private Supplier<Boolean> fieldCentric;
+  private Supplier<Trigger> speedShift;
+
   private ChassisSpeeds scaledSpeeds;
+
+  private Translation2d pivot;
+
+  private boolean changeSpeedMagnitude = false;
+  private double maxSpeed = MAX_SPEED;
 
   public ChassisControl(SwerveDrivetrain drivetrain,
       Supplier<Double> leftXAxis,
       Supplier<Double> leftYAxis,
       Supplier<Double> leftTrigger,
       Supplier<Double> rightTrigger,
-      Supplier<Boolean> pivotToggle,
+      Supplier<Trigger> speedShift,
       Supplier<Boolean> fieldCentric) {
     // Use addRequirements() here to declare subsystem dependencies.
     this.drivetrain = drivetrain;
@@ -37,7 +47,7 @@ public class ChassisControl extends Command {
     this.leftYAxis = leftYAxis;
     this.leftTrigger = leftTrigger;
     this.rightTrigger = rightTrigger;
-    this.pivotToggle = pivotToggle;
+    this.speedShift = speedShift;
     this.fieldCentric = fieldCentric;
     addRequirements(drivetrain);
   }
@@ -50,9 +60,17 @@ public class ChassisControl extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    Translation2d pivot = (pivotToggle.get()) ? BACK_LEFT_OFFSET : null;
+    speedShift.get().toggleOnTrue(new InstantCommand(
+      () -> changeSpeedMagnitude = true
+    ));
+
+    speedShift.get().toggleOnFalse(new InstantCommand(
+      () -> changeSpeedMagnitude = false
+    ));
     
-    ChassisSpeeds chassisSpeeds = new ChassisSpeeds(-leftXAxis.get(), leftYAxis.get(),
+    maxSpeed = (changeSpeedMagnitude ? MAX_CORRECTION_SPEED : MAX_SPEED);
+
+    ChassisSpeeds chassisSpeeds = new ChassisSpeeds(-leftYAxis.get(), leftXAxis.get(),
           Math.pow(rightTrigger.get() - leftTrigger.get(), 3));
 
     if (fieldCentric.get()) {
@@ -61,27 +79,28 @@ public class ChassisControl extends Command {
       //MY GOD THIS NEEDS TO BE CHANGED ONCE I FIND THE SOLUTION
 
       ChassisSpeeds fieldCentricSpeeds = SwerveMath.getFieldRelativeChassisSpeeds(chassisSpeeds,
-          drivetrain.getPigeonRotation2d());
+          drivetrain.getPigeonRotation2dEM());
+      
 
       //fieldCentricSpeeds are percentage based
-      scaledSpeeds = new ChassisSpeeds(fieldCentricSpeeds.vxMetersPerSecond * MAX_SPEED,
-          fieldCentricSpeeds.vyMetersPerSecond * MAX_SPEED, fieldCentricSpeeds.omegaRadiansPerSecond * MAX_SPEED);
+      scaledSpeeds = new ChassisSpeeds(fieldCentricSpeeds.vxMetersPerSecond * maxSpeed,
+          fieldCentricSpeeds.vyMetersPerSecond * maxSpeed, fieldCentricSpeeds.omegaRadiansPerSecond * maxSpeed*MAX_TURN_SPEED_SCALE);
    
       SmartDashboard.putNumber("distance travelled X: ", drivetrain.getOdometry().getPoseMeters().getX());
       SmartDashboard.putNumber("distance travelled Y: ", drivetrain.getOdometry().getPoseMeters().getY());
 
-      drivetrain.updateSkew(SwerveMath.canBeginSkewCompensation(scaledSpeeds));
+      //drivetrain.updateSkew(SwerveMath.canBeginSkewCompensation(scaledSpeeds));
     } else {
-      scaledSpeeds = new ChassisSpeeds(chassisSpeeds.vxMetersPerSecond * MAX_SPEED, 
-          chassisSpeeds.vyMetersPerSecond * MAX_SPEED, chassisSpeeds.omegaRadiansPerSecond * MAX_TURN_SPEED_SCALE);
+        scaledSpeeds = new ChassisSpeeds(chassisSpeeds.vxMetersPerSecond * maxSpeed, 
+        chassisSpeeds.vyMetersPerSecond * maxSpeed, chassisSpeeds.omegaRadiansPerSecond * MAX_TURN_SPEED_SCALE);
     }
     
     drivetrain.setCentralMotion(scaledSpeeds, pivot);
 
-    for (Entry<ModuleNames, SwerveModuleState> state : SwerveDrivetrain.stateMap.entrySet()) {
-      SmartDashboard.putNumberArray(state.getKey().toString(),
-          new Double[] { state.getValue().angle.getDegrees(), state.getValue().speedMetersPerSecond });
-    }
+    // for (Entry<ModuleNames, SwerveModuleState> state : SwerveDrivetrain.stateMap.entrySet()) {
+    //   SmartDashboard.putNumberArray(state.getKey().toString(),
+    //       new Double[] { state.getValue().angle.getDegrees(), state.getValue().speedMetersPerSecond });
+    // }
   }
 
   // Called once the command ends or is interrupted.

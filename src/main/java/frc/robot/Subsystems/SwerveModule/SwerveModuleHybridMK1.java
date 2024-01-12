@@ -94,4 +94,10 @@ public class SwerveModuleHybridMK1 extends SwerveModuleBase {
 
         driveMotor.burnFlash();
     }
+
+    @Override
+    public double getAngularModuleVelocity() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAngularModuleVelocity'");
+    }
 }
