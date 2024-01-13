@@ -37,10 +37,10 @@ public class SwerveConstants {
     public static final double MAX_DRIVE_RPM = 5700;
 
     public static final double MAX_POINT_SPEED = 0.25;
-    public static final double MAX_TURN_SPEED_SCALE = 1.2;
+    public static final double MAX_TURN_SPEED_SCALE = 1.0;
 
     public static final double TIMEOUT_MS = 5;
-    public static final double LOOKAHEAD_S = 0.02;
+    public static final double LOOKAHEAD_S = 0.3;
     public static final double kEps = 1E-9;
 
 

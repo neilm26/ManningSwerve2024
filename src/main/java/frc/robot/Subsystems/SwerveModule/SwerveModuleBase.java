@@ -190,8 +190,8 @@ public abstract class SwerveModuleBase implements ModuleConfiguration {
         updateIndividualModuleSpeeds(moduleSpeeds());
         SwerveDrivetrain.moduleWheelPos.replace(moduleName, getWheelPosition());
 
-        driveVelocity.getEntry().setDouble(getModuleVelocity());
-        distanceTravelled.getEntry().setDouble(getDistanceTravelled());
-        swerveModuleHeading.getEntry().setDouble(getModuleAngle());
+        // driveVelocity.getEntry().setDouble(getModuleVelocity());
+        // distanceTravelled.getEntry().setDouble(getDistanceTravelled());
+        // swerveModuleHeading.getEntry().setDouble(getModuleAngle());
     }
 }

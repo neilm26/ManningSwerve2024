@@ -193,11 +193,22 @@ public abstract class SwerveDrivetrain extends Subsystem {
   }
 
   public void setCentralMotion(ChassisSpeeds chassisSpeeds, Translation2d centerOfRotation) {
-    this.chassisSpeeds = chassisSpeeds;
-    chassisSpeeds = SwerveMath.skewCompensation(chassisSpeeds);
-    
     currentHeading = getPigeon().getYaw();
 
+    this.chassisSpeeds = chassisSpeeds;
+    chassisSpeeds = SwerveMath.skewCompensation(chassisSpeeds);
+
+    if (isSkewing) {
+      double correction = SwerveMath.compensateForSkewAngular(TIMEOUT_MS, currentHeading, targetHeading,
+          COMPENSATION_PID_CONTROLLER);
+      this.chassisSpeeds = new ChassisSpeeds(
+          chassisSpeeds.vxMetersPerSecond,
+          chassisSpeeds.vyMetersPerSecond,
+          chassisSpeeds.omegaRadiansPerSecond + correction);
+    } else {
+      targetHeading = currentHeading;
+    }
+    
     SwerveModuleState[] states = (centerOfRotation != null)
         ? driveKinematics.toSwerveModuleStates(this.chassisSpeeds, centerOfRotation)
         : driveKinematics.toSwerveModuleStates(this.chassisSpeeds);
@@ -226,9 +237,9 @@ public abstract class SwerveDrivetrain extends Subsystem {
   public void periodic() {
     // This method will be called once per scheduler run
     driveOdometry.update(getPigeonRotation2dEM(), getModulePositionsNoKey());
-    SmartDashboard.putNumber("robotPosX: ", driveOdometry.getPoseMeters().getTranslation().getX());
-    SmartDashboard.putNumber("robotPosY: ", driveOdometry.getPoseMeters().getTranslation().getY());
-    SmartDashboard.putNumber("robotPosHeading: ", driveOdometry.getPoseMeters().getRotation().getDegrees());
+    // SmartDashboard.putNumber("robotPosX: ", driveOdometry.getPoseMeters().getTranslation().getX());
+    // SmartDashboard.putNumber("robotPosY: ", driveOdometry.getPoseMeters().getTranslation().getY());
+    // SmartDashboard.putNumber("robotPosHeading: ", driveOdometry.getPoseMeters().getRotation().getDegrees());
     // SmartDashboard.putNumberArray("robotCurrentVelocities: ", new Double[] {
     //       getRobotMotion().vxMetersPerSecond, getRobotMotion().vyMetersPerSecond, getRobotMotion().omegaRadiansPerSecond});
     // SmartDashboard.putNumberArray("robotTargetVelocities: ", new Double[] {
@@ -236,8 +247,8 @@ public abstract class SwerveDrivetrain extends Subsystem {
     for (SwerveModuleBase module : getModules()) {
       // try and update each module's state unless it cannot be found, then return an
       // empty module state.
-      module.updateDrivePIDs(DRIVE_PID_CONTROLLER, MODULE_HEADING_PID_CONTROLLER, SmartDashboard.getNumber("ANGULAR_FF", 0.0));
-      module.updateEntries();
+      //module.updateDrivePIDs(DRIVE_PID_CONTROLLER, MODULE_HEADING_PID_CONTROLLER, SmartDashboard.getNumber("ANGULAR_FF", 0.0));
+      //module.updateEntries();
     }
   }
 }

@@ -72,6 +72,7 @@ public class ChassisControl extends Command {
 
     ChassisSpeeds chassisSpeeds = new ChassisSpeeds(-leftYAxis.get(), leftXAxis.get(),
           Math.pow(rightTrigger.get() - leftTrigger.get(), 3));
+    
 
     if (fieldCentric.get()) {
 
@@ -86,10 +87,11 @@ public class ChassisControl extends Command {
       scaledSpeeds = new ChassisSpeeds(fieldCentricSpeeds.vxMetersPerSecond * maxSpeed,
           fieldCentricSpeeds.vyMetersPerSecond * maxSpeed, fieldCentricSpeeds.omegaRadiansPerSecond * maxSpeed*MAX_TURN_SPEED_SCALE);
    
-      SmartDashboard.putNumber("distance travelled X: ", drivetrain.getOdometry().getPoseMeters().getX());
-      SmartDashboard.putNumber("distance travelled Y: ", drivetrain.getOdometry().getPoseMeters().getY());
+      // SmartDashboard.putNumber("distance travelled X: ", drivetrain.getOdometry().getPoseMeters().getX());
+      // SmartDashboard.putNumber("distance travelled Y: ", drivetrain.getOdometry().getPoseMeters().getY());
 
-      //drivetrain.updateSkew(SwerveMath.canBeginSkewCompensation(scaledSpeeds));
+      drivetrain.updateSkew(SwerveMath.canBeginSkewCompensation(scaledSpeeds));
+      
     } else {
         scaledSpeeds = new ChassisSpeeds(chassisSpeeds.vxMetersPerSecond * maxSpeed, 
         chassisSpeeds.vyMetersPerSecond * maxSpeed, chassisSpeeds.omegaRadiansPerSecond * MAX_TURN_SPEED_SCALE);
